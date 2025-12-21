@@ -27,11 +27,8 @@ COPY --from=build /usr/local/bin /usr/local/bin
 COPY --from=build /usr/local/share/xray /usr/local/share/xray
 
 COPY . /code
-
-RUN date > /tmp/build_ts \
-    && apt-get install -y --no-install-recommends curl \
-    && curl -L https://github.com/Itentis/domain-list-community/releases/latest/download/dlc.dat -o /usr/local/share/xray/itentis.dat \
-    && curl -L https://github.com/itentis/geoip/releases/latest/download/itentis.dat -o /usr/local/share/xray/itentis-ip.dat
+ADD https://github.com/Itentis/domain-list-community/releases/latest/download/dlc.dat /usr/local/share/xray/itentis.dat
+ADD https://github.com/itentis/geoip/releases/latest/download/itentis.dat /usr/local/share/xray/itentis-ip.dat
 
 RUN ln -s /code/marzban-cli.py /usr/bin/marzban-cli \
     && chmod +x /usr/bin/marzban-cli \
