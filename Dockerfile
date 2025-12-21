@@ -9,9 +9,7 @@ WORKDIR /code
 RUN apt-get update \
     && apt-get install -y --no-install-recommends build-essential curl unzip gcc python3-dev libpq-dev \
     && curl -L https://github.com/Gozargah/Marzban-scripts/raw/master/install_latest_xray.sh | bash \
-    && rm -rf /var/lib/apt/lists/* \
-    && curl -L https://github.com/Itentis/domain-list-community/releases/latest/download/dlc.dat -o /usr/local/share/xray/itentis.dat \
-    && curl -L https://github.com/itentis/geoip/releases/latest/download/itentis.dat -o /usr/local/share/xray/itentis-ip.dat
+    && rm -rf /var/lib/apt/lists/*
 
 COPY ./requirements.txt /code/
 RUN python3 -m pip install --upgrade pip setuptools \
@@ -29,6 +27,10 @@ COPY --from=build /usr/local/bin /usr/local/bin
 COPY --from=build /usr/local/share/xray /usr/local/share/xray
 
 COPY . /code
+
+RUN date > /tmp/build_ts \
+    && curl -L https://github.com/Itentis/domain-list-community/releases/latest/download/dlc.dat -o /usr/local/share/xray/itentis.dat \
+    && curl -L https://github.com/itentis/geoip/releases/latest/download/itentis.dat -o /usr/local/share/xray/itentis-ip.dat
 
 RUN ln -s /code/marzban-cli.py /usr/bin/marzban-cli \
     && chmod +x /usr/bin/marzban-cli \
