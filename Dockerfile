@@ -29,6 +29,7 @@ COPY --from=build /usr/local/share/xray /usr/local/share/xray
 COPY . /code
 
 RUN date > /tmp/build_ts \
+    && apt-get install -y --no-install-recommends curl \
     && curl -L https://github.com/Itentis/domain-list-community/releases/latest/download/dlc.dat -o /usr/local/share/xray/itentis.dat \
     && curl -L https://github.com/itentis/geoip/releases/latest/download/itentis.dat -o /usr/local/share/xray/itentis-ip.dat
 
