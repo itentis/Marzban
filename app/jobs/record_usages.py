@@ -17,9 +17,12 @@ from config import (
     JOB_RECORD_USER_USAGES_WORKERS,
     JOB_RECORD_NODE_USAGES_INTERVAL,
     JOB_RECORD_USER_USAGES_INTERVAL,
+    VICTORIAMETRICS_CONNSTRING
 )
 from xray_api import XRay as XRayAPI
 from xray_api import exc as xray_exc
+
+from utils import victoria
 
 
 def safe_execute(db: Session, stmt, params=None):
@@ -132,13 +135,24 @@ def record_node_stats(params: dict, node_id: Union[int, None]):
 
 def get_users_stats(api: XRayAPI):
     try:
-        params = defaultdict(int)
-        for stat in filter(
-            attrgetter("value"), api.get_users_stats(reset=True, timeout=30)
-        ):
-            params[stat.name.split(".", 1)[0]] += stat.value
-        params = list({"uid": uid, "value": value} for uid, value in params.items())
-        return params
+        # Initialize a dictionary to hold user stats by UID
+        stats_by_uid = defaultdict(int)
+
+        # Fetch user statistics and filter them based on the value attribute
+        user_stats = api.get_users_stats(reset=True, timeout=30)
+        filtered_stats = filter(attrgetter("value"), user_stats)
+
+        # Aggregate the statistics
+        for stat in filtered_stats:
+            if VICTORIAMETRICS_CONNSTRING:
+                victoria.queue_and_send(stat)
+            uid = stat.name.split(".", 1)[0]  # Extract UID
+            stats_by_uid[uid] += stat.value    # Sum the values for each UID
+
+        # Convert the aggregated stats to a list of dictionaries
+        result = [{"uid": uid, "value": value} for uid, value in stats_by_uid.items()]
+        return result
+
     except xray_exc.XrayError:
         return []
 
