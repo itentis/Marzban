@@ -3,6 +3,7 @@ import aiohttp
 from config import VICTORIAMETRICS_BATCH_SIZE as BATCH_SIZE
 from config import VICTORIAMETRICS_CONNSTRING as URL
 from config import HOSTNAME
+from config import VICTORIAMETRICS_DEBUG as DEBUG
 
 # Global variable for batch storage
 batch_storage = []
@@ -10,6 +11,8 @@ batch_storage = []
 
 async def send_batch(batch):
     concat = "\n".join(batch)
+    if DEBUG:
+        print(concat)
     async with aiohttp.ClientSession() as session:
         async with session.post(URL,
                                 data=concat,
