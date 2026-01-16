@@ -22,7 +22,7 @@ from config import (
 from xray_api import XRay as XRayAPI
 from xray_api import exc as xray_exc
 
-from utils import victoria
+from app.utils import victoria
 
 
 def safe_execute(db: Session, stmt, params=None):
