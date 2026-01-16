@@ -145,7 +145,10 @@ def get_users_stats(api: XRayAPI):
         # Aggregate the statistics
         for stat in filtered_stats:
             if VICTORIAMETRICS_CONNSTRING:
-                victoria.queue_and_send(stat)
+                try:
+                    victoria.queue_and_send(stat)
+                except Exception as e:
+                    print(f"victoriametrics: {e}")
             uid = stat.name.split(".", 1)[0]  # Extract UID
             stats_by_uid[uid] += stat.value    # Sum the values for each UID
 

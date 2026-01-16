@@ -78,8 +78,7 @@ class XRayConfig(dict):
                 "LoggerService",
                 "RoutingService",
                 "ReflectionService",
-                "StatsService",
-            ],
+                ],
             "tag": "API",
         }
         self["stats"] = {}
