@@ -207,3 +207,4 @@ JOB_SEND_NOTIFICATIONS_INTERVAL = config(
 XRAY_OVERRIDE_API = config("XRAY_OVERRIDE_API", cast=str, default="")
 VICTORIAMETRICS_BATCH_SIZE = config("VICTORIAMETRICS_BATCH_SIZE", cast=int, default=500)
 VICTORIAMETRICS_CONNSTRING = config("VICTORIAMETRICS_CONNSTRING", cast=str, default="")
+HOSTNAME = config("HOSTNAME", cast=str, default=False)
