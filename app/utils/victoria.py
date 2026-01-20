@@ -15,7 +15,7 @@ def send_batch(batch):
     response = requests.post(URL,
                              data=concat,
                              headers={"Content-Type": "text/plain"})
-    if response.status_code == 200:
+    if response.status_code == 204:
         print("Batch data sent successfully!")
     else:
         print(f"Error sending data: {response.status_code}, {response.text}")
