@@ -66,6 +66,9 @@ def on_shutdown():
 @app.exception_handler(RequestValidationError)
 def validation_exception_handler(request: Request, exc: RequestValidationError):
     details = {}
+    body = request.body()
+    logger.error(f"Request body: {body}")
+    logger.error(f"Validation errors: {exc.errors()}")
     for error in exc.errors():
         details[error["loc"][-1]] = error.get("msg")
     return JSONResponse(
