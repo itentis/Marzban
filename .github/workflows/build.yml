@@ -60,6 +60,6 @@ jobs:
           cache-from: type=gha,ref=ghcr.io/${{ steps.lower-repo.outputs.repository }}:${{ github.ref_name }}-build-cache 
           cache-to: type=gha,ref=ghcr.io/${{ steps.lower-repo.outputs.repository }}:${{ github.ref_name }}-build-cache,mode=max
           tags: |
-            ghcr.io/${{ steps.lower-repo.outputs.repository }}:latest
+            ghcr.io/${{ steps.lower-repo.outputs.repository }}:debug
             ghcr.io/${{ steps.lower-repo.outputs.repository }}:${{github.ref_name}}
             ghcr.io/${{ steps.lower-repo.outputs.repository }}:${{github.sha}}
