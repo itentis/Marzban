@@ -3,7 +3,7 @@ from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from config import (
     SQLALCHEMY_DATABASE_URL,
     SQLALCHEMY_POOL_SIZE,
-    SQLIALCHEMY_MAX_OVERFLOW,
+    SQLALCHEMY_MAX_OVERFLOW,
 )
 
 IS_SQLITE = SQLALCHEMY_DATABASE_URL.startswith('sqlite')
@@ -17,9 +17,10 @@ else:
     engine = create_engine(
         SQLALCHEMY_DATABASE_URL,
         pool_size=SQLALCHEMY_POOL_SIZE,
-        max_overflow=SQLIALCHEMY_MAX_OVERFLOW,
+        max_overflow=SQLALCHEMY_MAX_OVERFLOW,
         pool_recycle=3600,
-        pool_timeout=10
+        pool_timeout=10,
+        pool_pre_ping=True,
     )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

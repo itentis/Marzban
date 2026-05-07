@@ -7,7 +7,7 @@ SQLALCHEMY_DATABASE_URL = config(
     "SQLALCHEMY_DATABASE_URL", default="sqlite:///db.sqlite3"
 )
 SQLALCHEMY_POOL_SIZE = config("SQLALCHEMY_POOL_SIZE", cast=int, default=10)
-SQLIALCHEMY_MAX_OVERFLOW = config("SQLIALCHEMY_MAX_OVERFLOW", cast=int, default=30)
+SQLALCHEMY_MAX_OVERFLOW = config("SQLALCHEMY_MAX_OVERFLOW", cast=int, default=30)
 
 UVICORN_HOST = config("UVICORN_HOST", default="0.0.0.0")
 UVICORN_PORT = config("UVICORN_PORT", cast=int, default=8000)
