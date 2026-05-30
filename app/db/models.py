@@ -148,8 +148,8 @@ class User(Base):
 excluded_inbounds_association = Table(
     "exclude_inbounds_association",
     Base.metadata,
-    Column("proxy_id", ForeignKey("proxies.id")),
-    Column("inbound_tag", ForeignKey("inbounds.tag")),
+    Column("proxy_id", ForeignKey("proxies.id"), primary_key=True),
+    Column("inbound_tag", ForeignKey("inbounds.tag"), primary_key=True),
 )
 
 template_inbounds_association = Table(
