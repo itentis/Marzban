@@ -25,7 +25,9 @@ def upgrade() -> None:
         ))
         bind.execute(sa.text(
             "INSERT INTO _tmp_excl_inbounds "
-            "SELECT DISTINCT proxy_id, inbound_tag FROM exclude_inbounds_association"
+            "SELECT DISTINCT proxy_id, inbound_tag FROM exclude_inbounds_association "
+            "WHERE proxy_id IN (SELECT id FROM proxies) "
+            "AND inbound_tag IN (SELECT tag FROM inbounds)"
         ))
         bind.execute(sa.text("DELETE FROM exclude_inbounds_association"))
         bind.execute(sa.text(
