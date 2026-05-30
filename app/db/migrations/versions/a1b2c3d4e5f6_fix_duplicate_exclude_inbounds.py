@@ -21,6 +21,9 @@ def upgrade() -> None:
 
     if bind.engine.name == 'mysql':
         bind.execute(sa.text(
+            "DROP TABLE IF EXISTS _tmp_excl_inbounds"
+        ))
+        bind.execute(sa.text(
             "CREATE TABLE _tmp_excl_inbounds LIKE exclude_inbounds_association"
         ))
         bind.execute(sa.text(
