@@ -414,6 +414,8 @@ def remove_user(db: Session, dbuser: User) -> User:
     Returns:
         User: The removed user object.
     """
+    for proxy in dbuser.proxies:
+        proxy.excluded_inbounds.clear()
     db.delete(dbuser)
     db.commit()
     return dbuser
@@ -428,6 +430,8 @@ def remove_users(db: Session, dbusers: List[User]):
         dbusers (List[User]): List of user objects to be removed.
     """
     for dbuser in dbusers:
+        for proxy in dbuser.proxies:
+            proxy.excluded_inbounds.clear()
         db.delete(dbuser)
     db.commit()
     return
