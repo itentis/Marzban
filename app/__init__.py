@@ -58,6 +58,12 @@ def on_startup():
     scheduler.start()
 
 
+@app.on_event("startup")
+async def raise_threadpool_limit():
+    import anyio
+    anyio.to_thread.current_default_thread_limiter().total_tokens = 100
+
+
 @app.on_event("shutdown")
 def on_shutdown():
     scheduler.shutdown()
