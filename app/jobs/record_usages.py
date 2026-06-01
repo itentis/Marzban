@@ -58,29 +58,15 @@ def record_user_stats(
     created_at = datetime.fromisoformat(datetime.utcnow().strftime("%Y-%m-%dT%H:00:00"))
 
     with GetDB() as db:
-        # make user usage row if doesn't exist
-        select_stmt = select(NodeUserUsage.user_id).where(
-            and_(
-                NodeUserUsage.node_id == node_id, NodeUserUsage.created_at == created_at
-            )
+        # Insert rows that don't exist yet; safe_execute uses INSERT IGNORE on MySQL
+        uids_to_insert = list({int(p["uid"]) for p in params})
+        stmt = insert(NodeUserUsage).values(
+            user_id=bindparam("uid"),
+            created_at=created_at,
+            node_id=node_id,
+            used_traffic=0,
         )
-        existings = [r[0] for r in db.execute(select_stmt).fetchall()]
-        uids_to_insert = set()
-
-        for p in params:
-            uid = int(p["uid"])
-            if uid in existings:
-                continue
-            uids_to_insert.add(uid)
-
-        if uids_to_insert:
-            stmt = insert(NodeUserUsage).values(
-                user_id=bindparam("uid"),
-                created_at=created_at,
-                node_id=node_id,
-                used_traffic=0,
-            )
-            safe_execute(db, stmt, [{"uid": uid} for uid in uids_to_insert])
+        safe_execute(db, stmt, [{"uid": uid} for uid in uids_to_insert])
 
         # record
         stmt = (
@@ -208,8 +194,13 @@ def record_user_usages():
     if not users_usage:
         return
 
+    active_uids = [int(u["uid"]) for u in users_usage]
     with GetDB() as db:
-        user_admin_map = dict(db.query(User.id, User.admin_id).all())
+        user_admin_map = dict(
+            db.query(User.id, User.admin_id)
+            .filter(User.id.in_(active_uids))
+            .all()
+        )
 
     admin_usage = defaultdict(int)
     for user_usage in users_usage:
