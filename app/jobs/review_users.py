@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING
 
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session, joinedload
@@ -14,9 +13,6 @@ from app.utils.helpers import (calculate_expiration_days,
                                calculate_usage_percent)
 from config import (JOB_REVIEW_USERS_INTERVAL, NOTIFY_DAYS_LEFT,
                     NOTIFY_REACHED_USAGE_PERCENT, WEBHOOK_ADDRESS)
-
-if TYPE_CHECKING:
-    pass
 
 
 def add_notification_reminders(db: Session, user: "User", now: datetime = datetime.utcnow()) -> None:

@@ -29,6 +29,11 @@ class StatsServiceStub(object):
                 request_serializer=app_dot_stats_dot_command_dot_command__pb2.SysStatsRequest.SerializeToString,
                 response_deserializer=app_dot_stats_dot_command_dot_command__pb2.SysStatsResponse.FromString,
                 )
+        self.GetAllOnlineUsers = channel.unary_unary(
+                '/xray.app.stats.command.StatsService/GetAllOnlineUsers',
+                request_serializer=app_dot_stats_dot_command_dot_command__pb2.GetAllOnlineUsersRequest.SerializeToString,
+                response_deserializer=app_dot_stats_dot_command_dot_command__pb2.GetAllOnlineUsersResponse.FromString,
+                )
 
 
 class StatsServiceServicer(object):

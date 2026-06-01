@@ -15,22 +15,20 @@ from xray_api import exceptions as exc
 
 core = XRayCore(XRAY_EXECUTABLE_PATH, XRAY_ASSETS_PATH)
 
-# Search for a free API port
-found_port = None
-try:
+if XRAY_OVERRIDE_API:
+    api_host, api_port = XRAY_OVERRIDE_API.split(":")
+    config = XRayConfig(XRAY_JSON, api_port=int(api_port), api_host=api_host)
+else:
+    # Search for a free API port
+    found_port = None
     for api_port in range(randint(10000, 60000), 65536):
         if not check_port(api_port):
             found_port = api_port
             break
     if found_port is None:
         raise RuntimeError("no free API port found")
-finally:
-    if XRAY_OVERRIDE_API:
-        api_host, api_port = XRAY_OVERRIDE_API.split(":")
-        config = XRayConfig(XRAY_JSON, api_port=api_port, api_host=api_host)
-    else:
-        config = XRayConfig(XRAY_JSON, api_port=found_port)
-    # no need for del
+    config = XRayConfig(XRAY_JSON, api_port=found_port)
+
 api = XRayAPI(config.api_host, config.api_port)
 
 nodes: Dict[int, XRayNode] = {}

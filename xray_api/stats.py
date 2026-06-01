@@ -123,20 +123,12 @@ class Stats(XRayBase):
         return OutboundStatsResponse(tag=tag, uplink=uplink, downlink=downlink)
 
     def get_online_stats(self, timeout: int = None) -> int:
-        """Return the number of currently online users via GetStatsOnline.
-
-        GetStatsOnline is not in the generated stub, so we wire it manually.
-        The response has the same proto layout as QueryStatsResponse
-        (repeated Stat stat = 1), so we reuse that deserializer.
-        The request is empty — same wire bytes as SysStatsRequest.
-        """
+        """Return the number of currently online users via GetAllOnlineUsers."""
         try:
-            call = self._channel.unary_unary(
-                '/xray.app.stats.command.StatsService/GetStatsOnline',
-                request_serializer=command_pb2.SysStatsRequest.SerializeToString,
-                response_deserializer=command_pb2.QueryStatsResponse.FromString,
+            stub = command_pb2_grpc.StatsServiceStub(self._channel)
+            r = stub.GetAllOnlineUsers(
+                command_pb2.GetAllOnlineUsersRequest(), timeout=timeout
             )
-            r = call(command_pb2.SysStatsRequest(), timeout=timeout)
-            return len(r.stat)
+            return len(r.users)
         except grpc.RpcError as e:
             raise RelatedError(e)
