@@ -10,6 +10,7 @@ from app.models.system import SystemStats
 from app.models.user import UserStatus
 from app.utils import responses
 from app.utils.system import cpu_usage, memory_usage, realtime_bandwidth
+from xray_api import exc as xray_exc
 
 router = APIRouter(tags=["System"], prefix="/api", responses={401: responses._401})
 
@@ -43,6 +44,16 @@ def get_system_stats(
     online_users = crud.count_online_users(db, 24)
     realtime_bandwidth_stats = realtime_bandwidth()
 
+    realtime_online_users = 0
+    apis = [xray.api] + [
+        node.api for node in xray.nodes.values() if node.connected and node.started
+    ]
+    for api in apis:
+        try:
+            realtime_online_users += api.get_online_stats(timeout=3)
+        except xray_exc.XrayError:
+            pass
+
     return SystemStats(
         version=__version__,
         mem_total=mem.total,
@@ -60,6 +71,7 @@ def get_system_stats(
         outgoing_bandwidth=system.downlink,
         incoming_bandwidth_speed=realtime_bandwidth_stats.incoming_bytes,
         outgoing_bandwidth_speed=realtime_bandwidth_stats.outgoing_bytes,
+        realtime_online_users=realtime_online_users,
     )
 
 
