@@ -7,6 +7,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
+from sqlalchemy.exc import TimeoutError as DBTimeoutError
 
 from config import ALLOWED_ORIGINS, DOCS, XRAY_SUBSCRIPTION_PATH
 
@@ -67,6 +68,15 @@ async def raise_threadpool_limit():
 @app.on_event("shutdown")
 def on_shutdown():
     scheduler.shutdown()
+
+
+@app.exception_handler(DBTimeoutError)
+async def db_pool_exhausted_handler(request: Request, exc: DBTimeoutError):
+    return JSONResponse(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        headers={"Retry-After": "5"},
+        content={"detail": "Server is busy, please retry shortly"},
+    )
 
 
 @app.exception_handler(RequestValidationError)
