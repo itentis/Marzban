@@ -35,6 +35,7 @@ XRAY_FALLBACKS_INBOUND_TAG = config(
 XRAY_EXECUTABLE_PATH = config("XRAY_EXECUTABLE_PATH", default="/usr/local/bin/xray")
 XRAY_ASSETS_PATH = config("XRAY_ASSETS_PATH", default="/usr/local/share/xray")
 XRAY_EXCLUDE_INBOUND_TAGS = config("XRAY_EXCLUDE_INBOUND_TAGS", default="").split()
+XRAY_STDERR_LOG_PATH = config("XRAY_STDERR_LOG_PATH", default="/var/log/xray-stderr.log")
 XRAY_SUBSCRIPTION_URL_PREFIX = config("XRAY_SUBSCRIPTION_URL_PREFIX", default="").strip(
     "/"
 )

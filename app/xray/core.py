@@ -7,7 +7,7 @@ from contextlib import contextmanager
 
 from app import logger
 from app.xray.config import XRayConfig
-from config import DEBUG
+from config import DEBUG, XRAY_STDERR_LOG_PATH
 
 
 class XRayCore:
@@ -25,6 +25,7 @@ class XRayCore:
         self._temp_log_buffers = {}
         self._on_start_funcs = []
         self._on_stop_funcs = []
+        self._stderr_log_file = None
         self._env = {
             "XRAY_LOCATION_ASSET": assets_path
         }
@@ -116,11 +117,12 @@ class XRayCore:
             '-config',
             'stdin:'
         ]
+        self._stderr_log_file = open(XRAY_STDERR_LOG_PATH, 'a')
         self.process = subprocess.Popen(
             cmd,
             env=self._env,
             stdin=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stderr=self._stderr_log_file,
             stdout=subprocess.PIPE,
             universal_newlines=True
         )
@@ -141,6 +143,9 @@ class XRayCore:
 
         self.process.terminate()
         self.process = None
+        if self._stderr_log_file:
+            self._stderr_log_file.close()
+            self._stderr_log_file = None
         logger.warning("Xray core stopped")
 
         # execute on stop functions
