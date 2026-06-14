@@ -121,3 +121,14 @@ class Stats(XRayBase):
             if stat.link == 'downlink':
                 downlink = stat.value
         return OutboundStatsResponse(tag=tag, uplink=uplink, downlink=downlink)
+
+    def get_online_stats(self, timeout: int = None) -> int:
+        """Return the number of currently online users via GetAllOnlineUsers."""
+        try:
+            stub = command_pb2_grpc.StatsServiceStub(self._channel)
+            r = stub.GetAllOnlineUsers(
+                command_pb2.GetAllOnlineUsersRequest(), timeout=timeout
+            )
+            return len(r.users)
+        except grpc.RpcError as e:
+            raise RelatedError(e)

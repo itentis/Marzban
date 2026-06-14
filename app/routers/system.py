@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, List, Union
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -10,6 +11,7 @@ from app.models.system import SystemStats
 from app.models.user import UserStatus
 from app.utils import responses
 from app.utils.system import cpu_usage, memory_usage, realtime_bandwidth
+from xray_api import exc as xray_exc
 
 router = APIRouter(tags=["System"], prefix="/api", responses={401: responses._401})
 
@@ -43,6 +45,18 @@ def get_system_stats(
     online_users = crud.count_online_users(db, 24)
     realtime_bandwidth_stats = realtime_bandwidth()
 
+    apis = [xray.api] + [
+        node.api for node in xray.nodes.values() if node.connected and node.started
+    ]
+    realtime_online_users = 0
+    with ThreadPoolExecutor(max_workers=len(apis)) as executor:
+        futures = [executor.submit(api.get_online_stats, 3) for api in apis]
+        for future in as_completed(futures):
+            try:
+                realtime_online_users += future.result()
+            except xray_exc.XrayError:
+                pass
+
     return SystemStats(
         version=__version__,
         mem_total=mem.total,
@@ -60,6 +74,7 @@ def get_system_stats(
         outgoing_bandwidth=system.downlink,
         incoming_bandwidth_speed=realtime_bandwidth_stats.incoming_bytes,
         outgoing_bandwidth_speed=realtime_bandwidth_stats.outgoing_bytes,
+        realtime_online_users=realtime_online_users,
     )
 
 

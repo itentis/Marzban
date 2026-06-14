@@ -1,20 +1,18 @@
-from datetime import datetime
-from typing import TYPE_CHECKING
+from datetime import datetime, timedelta
 
-from sqlalchemy.orm import Session
+from sqlalchemy import and_, or_
+from sqlalchemy.orm import Session, joinedload
 
 from app import logger, scheduler, xray
 from app.db import (GetDB, get_notification_reminder, get_users,
                     start_user_expire, update_user_status, reset_user_by_next)
+from app.db.models import User
 from app.models.user import ReminderType, UserResponse, UserStatus
 from app.utils import report
 from app.utils.helpers import (calculate_expiration_days,
                                calculate_usage_percent)
 from config import (JOB_REVIEW_USERS_INTERVAL, NOTIFY_DAYS_LEFT,
                     NOTIFY_REACHED_USAGE_PERCENT, WEBHOOK_ADDRESS)
-
-if TYPE_CHECKING:
-    from app.db.models import User
 
 
 def add_notification_reminders(db: Session, user: "User", now: datetime = datetime.utcnow()) -> None:
@@ -55,29 +53,39 @@ def review():
     now = datetime.utcnow()
     now_ts = now.timestamp()
     with GetDB() as db:
-        for user in get_users(db, status=UserStatus.active):
 
+        # --- Active users needing status change ---
+        # Only fetch users that are actually limited or expired instead of all active users.
+        # With no data limits configured, this reduces to only time-expired users.
+        expiry_or_limit = or_(
+            and_(User.data_limit.isnot(None), User.used_traffic >= User.data_limit),
+            and_(User.expire.isnot(None), User.expire <= now_ts),
+        )
+        action_users = (
+            db.query(User)
+            .options(joinedload(User.admin), joinedload(User.next_plan))
+            .filter(User.status == UserStatus.active, expiry_or_limit)
+            .all()
+        )
+
+        for user in action_users:
             limited = user.data_limit and user.used_traffic >= user.data_limit
             expired = user.expire and user.expire <= now_ts
 
-            if (limited or expired) and user.next_plan is not None:
-                if user.next_plan is not None:
+            if user.next_plan is not None:
+                if user.next_plan.fire_on_either:
+                    reset_user_by_next_report(db, user)
+                    continue
 
-                    if user.next_plan.fire_on_either:
-                        reset_user_by_next_report(db, user)
-                        continue
-
-                    elif limited and expired:
-                        reset_user_by_next_report(db, user)
-                        continue
+                elif limited and expired:
+                    reset_user_by_next_report(db, user)
+                    continue
 
             if limited:
                 status = UserStatus.limited
             elif expired:
                 status = UserStatus.expired
             else:
-                if WEBHOOK_ADDRESS:
-                    add_notification_reminders(db, user, now)
                 continue
 
             xray.operations.remove_user(user)
@@ -88,6 +96,43 @@ def review():
 
             logger.info(f"User \"{user.username}\" status changed to {status}")
 
+        # --- Active users approaching notification thresholds ---
+        # Only run if webhooks are configured, and only fetch users actually near a threshold.
+        if WEBHOOK_ADDRESS and (NOTIFY_REACHED_USAGE_PERCENT or NOTIFY_DAYS_LEFT):
+            notification_filters = []
+
+            if NOTIFY_REACHED_USAGE_PERCENT:
+                min_pct = min(NOTIFY_REACHED_USAGE_PERCENT) / 100.0
+                notification_filters.append(
+                    and_(
+                        User.data_limit.isnot(None),
+                        User.used_traffic >= User.data_limit * min_pct,
+                        User.used_traffic < User.data_limit,
+                    )
+                )
+
+            if NOTIFY_DAYS_LEFT:
+                max_days = max(NOTIFY_DAYS_LEFT)
+                cutoff_ts = int((now + timedelta(days=max_days)).timestamp())
+                notification_filters.append(
+                    and_(
+                        User.expire.isnot(None),
+                        User.expire > now_ts,
+                        User.expire <= cutoff_ts,
+                    )
+                )
+
+            notification_users = (
+                db.query(User)
+                .options(joinedload(User.admin))
+                .filter(User.status == UserStatus.active, or_(*notification_filters))
+                .all()
+            )
+
+            for user in notification_users:
+                add_notification_reminders(db, user, now)
+
+        # --- On-hold users ---
         for user in get_users(db, status=UserStatus.on_hold):
 
             if user.edit_at:
@@ -95,7 +140,7 @@ def review():
             else:
                 base_time = datetime.timestamp(user.created_at)
 
-            # Check if the user is online After or at 'base_time'
+            # Check if the user connected after or at 'base_time'
             if user.online_at and base_time <= datetime.timestamp(user.online_at):
                 status = UserStatus.active
 
